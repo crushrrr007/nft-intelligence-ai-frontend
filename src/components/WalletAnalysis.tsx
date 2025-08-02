@@ -44,46 +44,60 @@ export const WalletAnalysis = () => {
       setError('Please enter a wallet address');
       return;
     }
-
+  
     if (!validateWalletAddress(walletAddress)) {
       setError('Please enter a valid Ethereum wallet address (0x...)');
       return;
     }
-
+  
     setIsLoading(true);
     setError('');
-
+  
     try {
+      // Call your real backend API
       const response = await axios.post('http://localhost:3000/api/analyze/wallet', {
-        address: walletAddress
+        walletAddress: walletAddress.trim()
       });
-
-      setWalletData(response.data);
-    } catch (error) {
-      // Demo data for when API is not available
-      const demoData: WalletData = {
-        address: walletAddress,
-        balance: '2.45 ETH',
-        nftCount: 127,
-        totalValue: '$8,432.50',
-        riskScore: 3.2,
-        lastActivity: '2 hours ago',
-        topCollections: [
-          { name: 'Bored Ape Yacht Club', count: 3, value: '$4,200' },
-          { name: 'CryptoPunks', count: 1, value: '$2,800' },
-          { name: 'Azuki', count: 5, value: '$1,200' }
-        ],
-        recentTransactions: [
-          { type: 'Purchase', collection: 'Art Blocks', price: '0.8 ETH', timestamp: '2h ago' },
-          { type: 'Sale', collection: 'Doodles', price: '1.2 ETH', timestamp: '5h ago' },
-          { type: 'Transfer', collection: 'Moonbirds', price: '0 ETH', timestamp: '1d ago' }
-        ]
-      };
-
-      setWalletData(demoData);
+  
+      console.log('Backend response:', response.data);
+  
+      if (response.data.success) {
+        // Use real backend data
+        const backendData = response.data.data || response.data;
+        
+        const realWalletData: WalletData = {
+          address: walletAddress,
+          balance: backendData.balance || 'Loading...',
+          nftCount: backendData.nftCount || 0,
+          totalValue: backendData.totalValue || 'Calculating...',
+          riskScore: backendData.riskScore || 0,
+          lastActivity: backendData.lastActivity || 'Analyzing...',
+          topCollections: backendData.topCollections || [
+            { name: 'Real Data from BitsCrunch API', count: 1, value: 'Connected' }
+          ],
+          recentTransactions: backendData.recentTransactions || [
+            { type: 'Analysis', collection: 'Backend Connected', price: 'Real Data', timestamp: 'Live' }
+          ]
+        };
+  
+        setWalletData(realWalletData);
+        
+        toast({
+          title: "Analysis Complete",
+          description: "Real data loaded from BitsCrunch API",
+        });
+      } else {
+        throw new Error('Backend API returned error');
+      }
+  
+    } catch (error: any) {
+      console.error('API Error:', error);
+      
+      setError('Backend connection failed. Make sure server is running on port 3000');
+      
       toast({
-        title: "Demo Mode",
-        description: "Showing sample data - API endpoint not available",
+        title: "Connection Error",
+        description: "Could not connect to backend server. Check console for details.",
       });
     } finally {
       setIsLoading(false);

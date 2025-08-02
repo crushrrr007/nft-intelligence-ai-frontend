@@ -1,9 +1,11 @@
+import axios from "axios";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, Loader2, Copy, CheckCircle } from "lucide-react";
+import API_BASE_URL, { API_ENDPOINTS } from "@/api/config";
 import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessage {
@@ -81,68 +83,47 @@ export const ChatInterface = () => {
   };
 
   const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
-
+    if (!inputValue.trim()) return;
+  
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
-      content: inputValue,
+      content: inputValue.trim(),
       timestamp: new Date()
     };
-
+  
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
     setIsTyping(true);
-
+  
     try {
-      // Add typing indicator
-      const typingMessage: ChatMessage = {
-        id: 'typing',
-        type: 'ai',
-        content: 'AI is thinking...',
-        timestamp: new Date(),
-        isTyping: true
-      };
-      setMessages(prev => [...prev, typingMessage]);
-
-      // Simulate API call to backend - using demo responses for now
-      // const response = await axios.post('/api/chat', {
-      //   message: inputValue,
-      //   context: messages.slice(-5)
-      // });
-      
-      // For now, simulate a more intelligent demo response
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-
-      // Remove typing indicator and add real response
-      setMessages(prev => prev.filter(msg => msg.id !== 'typing'));
-      
-      // Generate intelligent demo response based on input
-      const demoResponse = generateDemoResponse(inputValue);
-      
+      // Call your real backend API
+      const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.chat}`, {
+        message: userMessage.content,
+        userId: 'frontend-user-' + Date.now()
+      });
+  
+      // Add AI response
       const aiMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: demoResponse,
+        content: response.data.response,
         timestamp: new Date()
       };
-
+  
       setMessages(prev => [...prev, aiMessage]);
-
-    } catch (error) {
-      // Remove typing indicator
-      setMessages(prev => prev.filter(msg => msg.id !== 'typing'));
       
-      // Add fallback demo response
-      const demoResponse = generateDemoResponse(inputValue);
+    } catch (error: any) {
+      console.error('Chat API Error:', error);
+      
       const errorMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: demoResponse,
+        content: 'Sorry, I encountered an error. Please make sure the backend server is running on http://localhost:3000',
         timestamp: new Date()
       };
-
+      
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
